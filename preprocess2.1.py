@@ -16,7 +16,7 @@ def get_db_values(value_set_path): # value_set.json, all the domain[slot] values
     with open(value_set_path, 'r') as f: # read value set file in lower
         value_set = json.loads(f.read().lower())
 
-    with open('db/ontology.json', 'r') as f: # read ontology in lower, all the domain-slot values
+    with open('db_21/ontology.json', 'r') as f: # read ontology in lower, all the domain-slot values
         otlg = json.loads(f.read().lower())
 
     for domain, slots in value_set.items(): # add all informable slots to bspn_word, create lists holder for values
@@ -83,7 +83,7 @@ def preprocess_db(db_paths): # apply clean_slot_values to all dbs
     dbs = {}
     nlp = spacy.load('en_core_web_sm')
     for domain in ontology.all_domains:
-        with open(db_paths[domain], 'r') as f: # for every db_domain, read json file 
+        with open(db_paths[domain], 'r') as f: # for every db_domain, read json file
             dbs[domain] = json.loads(f.read().lower())
             for idx, entry in enumerate(dbs[domain]): # entry has information about slots of said domain
                 new_entry = copy.deepcopy(entry)
@@ -106,8 +106,8 @@ class DataPreprocessor(object):
         self.db = MultiWozDB(cfg.dbs) # load all processed dbs
         # data_path = 'data/multi-woz/annotated_user_da_with_span_full.json'
         data_path = 'data/MultiWOZ_2.1/data.json'
-        archive = zipfile.ZipFile(data_path + '.zip', 'r')
-        self.convlab_data = json.loads(archive.open(data_path.split('/')[-1], 'r').read().lower())
+        # archive = zipfile.ZipFile(data_path + '.zip', 'r')
+        self.convlab_data = json.loads(open(data_path, 'r').read().lower())
         # self.delex_sg_valdict_path = 'data/multi-woz-processed/delex_single_valdict.json'
         # self.delex_mt_valdict_path = 'data/multi-woz-processed/delex_multi_valdict.json'
         # self.ambiguous_val_path = 'data/multi-woz-processed/ambiguous_values.json'
@@ -128,10 +128,7 @@ class DataPreprocessor(object):
 
 
     def delex_by_annotation(self, dial_turn):
-        ## add by yyy in 13:48 0803
         u = dial_turn['text'].split()
-        # u = my_clean_text(dial_turn['text']).split()
-        ##
         span = dial_turn['span_info']
         for s in span:
             slot = s[1]
@@ -140,7 +137,10 @@ class DataPreprocessor(object):
             if ontology.da_abbr_to_slot_name.get(slot):
                 slot = ontology.da_abbr_to_slot_name[slot]
             for idx in range(s[3], s[4]+1):
-                u[idx] = ''
+                if len(u) - 1 >= idx:
+                    u[idx] = ''
+                else:
+                    print('Range error')
             try:
                 u[s[3]] = '[value_'+slot+']'
             except:
@@ -488,15 +488,15 @@ class DataPreprocessor(object):
 
 if __name__=='__main__':
     db_paths = {
-            'attraction': 'db/attraction_db.json',
-            'hospital': 'db/hospital_db.json',
-            'hotel': 'db/hotel_db.json',
-            'police': 'db/police_db.json',
-            'restaurant': 'db/restaurant_db.json',
-            'taxi': 'db/taxi_db.json',
-            'train': 'db/train_db.json',
+            'attraction': 'db_21/attraction_db.json',
+            'hospital': 'db_21/hospital_db.json',
+            'hotel': 'db_21/hotel_db.json',
+            'police': 'db_21/police_db.json',
+            'restaurant': 'db_21/restaurant_db.json',
+            'taxi': 'db_21/taxi_db.json',
+            'train': 'db_21/train_db.json',
         }
-    # get_db_values('db/value_set.json') # 
+    # get_db_values('db/value_set.json') #
     # preprocess_db(db_paths)
     if not os.path.exists('data/multi-woz-2.1-processed'):
         os.mkdir('data/multi-woz-2.1-processed')
