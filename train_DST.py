@@ -125,12 +125,12 @@ class Modal(object):
         all_batches = self.reader.get_batches('train')
         # compute num_training_steps in get_batches()
         optimizer, scheduler = self.get_optimizers()
-        if cfg.fp16:
-            try:
-                from apex import amp
-            except ImportError:
-                raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
-            self.model, optimizer = amp.initialize(self.model, optimizer, opt_level="O1")
+        # if cfg.fp16:
+        #     try:
+        #         from apex import amp
+        #     except ImportError:
+        #         raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+        #     self.model, optimizer = amp.initialize(self.model, optimizer, opt_level="O1")
         # log info
         set_stats = self.reader.set_stats['train']
         logging.info("***** Running training *****")
@@ -182,12 +182,12 @@ class Modal(object):
                     # outputs = self.model(inputs['contexts_tensor']) # debugging with GPT2Model
                     loss = self.calculate_loss_and_accuracy(
                         outputs, labels=inputs['contexts_tensor'])
-                    if cfg.fp16:
-                        with amp.scale_loss(loss, optimizer) as scaled_loss:
-                            scaled_loss.backward()
-                            # torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), 5.0)
-                    else:
-                        loss.backward()
+                    # if cfg.fp16:
+                    #     with amp.scale_loss(loss, optimizer) as scaled_loss:
+                    #         scaled_loss.backward()
+                    #         # torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), 5.0)
+                    # else:
+                    loss.backward()
                     tr_loss += loss.item()
                     # torch.nn.utils.clip_grad_norm_(
                     #     self.model.parameters(), 5.0)
@@ -384,7 +384,7 @@ class Modal(object):
                     #     print('gt_resp: ', self.tokenizer.decode(turn['resp']), '\n')
 
                     pv_turn['labels'] = inputs['labels'] # all true previous context
-                    pv_turn['resp'] = turn['resp'] if cfg.use_true_pv_resp else decoded['resp']
+                    pv_turn['resp'] = turn['resp'] if cfg.use_true_prev_resp else decoded['resp']
                     pv_turn['bspn'] = turn['bspn'] if cfg.use_true_prev_bspn else decoded['bspn']
                     pv_turn['db'] = db
                     pv_turn['aspn'] = turn['aspn'] if cfg.use_true_prev_aspn else decoded['aspn']
@@ -399,12 +399,12 @@ class Modal(object):
         # score
         btm = time.time()
         results, _ = self.reader.wrap_result_lm(result_collection)
-        bleu, success, match,dials = self.evaluator.validation_metric(results)
+        bleu, success, match = self.evaluator.validation_metric(results)
         logging.info('Jonit ACC: {:.4f}'.format(joint_acc))
 
-        logging.info("Saving model output ot {}".format(cfg.gpt_path))
-        with open(cfg.gpt_path+cfg.model_output+'.json',"w") as f:
-            json.dump(dials,f,indent=2)
+        # logging.info("Saving model output ot {}".format(cfg.gpt_path))
+        # with open(cfg.gpt_path+cfg.model_output+'.json',"w") as f:
+        #     json.dump(dials,f,indent=2)
 
         logging.info("Scoring time: {:.2f} min".format((time.time()-btm)/60))
         score = 0.5 * (success + match) + bleu
@@ -540,10 +540,10 @@ class Modal(object):
         btm = time.time()
         results, _ = self.reader.wrap_result_lm(result_collection)
         # bleu, success, match = self.evaluator.validation_metric(results)
-        bleu, success, match,dials = self.evaluator.validation_metric(results)
-        logging.info("Saving model output ot {}".format(cfg.gpt_path))
-        with open(cfg.gpt_path+cfg.model_output,"w") as f:
-            json.dump(dials,f,indent=2)
+        bleu, success, match = self.evaluator.validation_metric(results)
+        # logging.info("Saving model output ot {}".format(cfg.gpt_path))
+        # with open(cfg.gpt_path+cfg.model_output,"w") as f:
+        #     json.dump(dials,f,indent=2)
         logging.info("Scoring time: {:.2f} min".format((time.time()-btm)/60))
         score = 0.5 * (success + match) + bleu
         valid_loss = 130 - score
